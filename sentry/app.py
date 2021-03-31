@@ -13,6 +13,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from sentry.utils.dependecies import get_current_user
 
+redis_broker = RedisBroker
 app = FastAPI()
 JSONObject = Dict[AnyStr, Any]
 JSONArray = List[Any]

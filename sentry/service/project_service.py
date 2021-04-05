@@ -17,4 +17,4 @@ async def create_project(new_project: ProjectCreate, user):
         )
     )
     await database.execute(query)
-    return unique_key
+    return {"project_id": unique_key}

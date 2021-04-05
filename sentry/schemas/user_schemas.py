@@ -10,6 +10,12 @@ class UserCreate(BaseModel):
     password: str
 
 
+class UserAuth(BaseModel):
+    """ Формирует тело ответа с деталями пользователя """
+    username: EmailStr
+    password: str
+
+
 class UserBase(BaseModel):
     """ Формирует тело ответа с деталями пользователя """
     id: int
@@ -18,6 +24,9 @@ class UserBase(BaseModel):
 
 
 class TokenBase(BaseModel):
+    id: int
+    email: EmailStr
+    name: str
     token: UUID4 = Field(..., alias="access_token")
     expires: datetime
     token_type: Optional[str] = "bearer"

@@ -2,7 +2,7 @@ FROM tiangolo/uvicorn-gunicorn-fastapi:python3.7
 
 WORKDIR /app
 
-COPY sentry /app
+COPY req.txt /app
 
 ENV NAME integral
 
@@ -15,4 +15,5 @@ EXPOSE 8000
 RUN pip install ssh-import-id && \
  pip install ufw-config && \
  pip install psycopg2-binary && \
- pip3 install -r req.txt
+ pip3 install -r req.txt && \
+ pip install databases

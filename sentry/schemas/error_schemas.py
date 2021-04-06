@@ -26,8 +26,6 @@ class ProjectCreate(BaseModel):
 
 class ProjectUpdate(BaseModel):
     name: Optional[str] = None
-    project_id: Optional[str] = None
-
 
 class ProjectSchema(BaseModel):
     project_id: Optional[str] = None

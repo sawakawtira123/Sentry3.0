@@ -2,6 +2,7 @@ import sqlalchemy as db
 from sqlalchemy import ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import UUID
+import datetime
 
 from sentry.db import metadata
 
@@ -49,6 +50,9 @@ users_table = db.Table(
         server_default=db.sql.expression.true(),
         nullable=False,
     ),
+    db.Column("createdAt", db.DateTime, default=datetime.datetime.now()),
+    db.Column("updatedAt", db.DateTime, default=datetime.datetime.now()),
+    db.Column("image", db.BLOB),
 )
 
 tokens_table = db.Table(

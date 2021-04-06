@@ -38,3 +38,11 @@ class TokenBase(BaseModel):
 class User(UserBase):
     """ Формирует тело ответа с деталями пользователя и токеном """
     token: TokenBase = {}
+
+
+class UserProfile(UserAuth):
+    createdAt: datetime
+    updatedAt: datetime
+    bio: str
+    image: str
+    token: str

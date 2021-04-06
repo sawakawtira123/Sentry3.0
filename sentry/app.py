@@ -11,7 +11,7 @@ from sentry.models.models import error, project
 from sentry import parse_error
 from sentry.service import user_service
 from sentry.service.project_service import create_project
-from sentry.schemas.user_schemas import User, UserCreate, TokenBase, UserBase
+from sentry.schemas.user_schemas import User, UserCreate, TokenBase, UserBase, UserProfile
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
@@ -81,9 +81,9 @@ async def delete_project(_project_id: str, current_user: User = Depends(get_curr
 
 
 # Обновить имя проекта !
-@app.put("/api/v1/project/")
-async def update_project(new_project: ProjectUpdate, current_user: User = Depends(get_current_user)):
-    query = f"UPDATE public.project SET name = '{new_project.name}' WHERE (project_id = '{new_project.project_id}' AND user_id = {current_user['id']});"
+@app.put("/api/v1/project/{project_id}")
+async def update_project(project_id: str, new_project: ProjectUpdate, current_user: User = Depends(get_current_user)):
+    query = f"UPDATE public.project SET name = '{new_project.name}' WHERE (project_id = '{project_id}' AND user_id = {current_user['id']});"
     await database.execute(query=query)
     return new_project
 
@@ -183,5 +183,13 @@ async def auth(form_data: OAuth2PasswordRequestForm = Depends()):
                 "user_token": user_token
     }
     return token_base
+
+
+@app.get("/api/v1/user/")
+async def get_user_info(current_user: User = Depends(get_current_user)):
+    user_id = current_user['user_id']
+    query = f'SELECT us.id, us.email, name, tk.token, us."createdAt", us."updatedAt", us.image FROM public.users us join tokens tk on tk.user_id=us.id where us.id = {user_id} ORDER BY tk.id DESC LIMIT 1'
+    return await database.fetch_one(query=query)
+
 
 

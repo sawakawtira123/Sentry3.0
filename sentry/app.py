@@ -1,4 +1,9 @@
+import os
+import sys
+import time
+
 from typing import List, Dict, Any, AnyStr, Union
+import logging
 from fastapi import FastAPI, Response, HTTPException
 
 from sentry.schemas.error_schemas import ProjectSchema, ErrorSchema, ProjectCreate
@@ -15,6 +20,23 @@ from sentry.utils.dependecies import get_current_user
 
 redis_broker = RedisBroker
 app = FastAPI()
+
+app.add_middleware(CORSMiddleware,
+                   allow_origins=['*'],
+                   allow_credentials=True,
+                   allow_methods=['*'],
+                   allow_headers=['*'])
+
+# broker = RedisBroker(host="127.0.0.1", port=6379)
+# broker.declare_queue("default")
+# dramatiq.set_broker(broker)
+
+# BROKER_URI = 'redis://localhost:6379/0'
+# celery = Celery(
+#     'celery_app',
+#     broker=BROKER_URI,
+# )
+
 JSONObject = Dict[AnyStr, Any]
 JSONArray = List[Any]
 JSONStructure = Union[JSONArray, JSONObject]
@@ -50,9 +72,17 @@ async def delete_project(_project_id: str, current_user: User = Depends(get_curr
     query = error.delete().where(error.c.project_id == _project_id)
     second_query = project.delete().where(project.c.project_id == _project_id and
                                           current_user['id'] == project.user_id)
+    await database.fetch_all(query=query)
+    await database.fetch_one(query=second_query)
+    return Response(content="Успешно удалено", status_code=203)
+
+
+# Обновить имя проекта !
+@app.put("/api/v1/project/")
+async def update_project(new_project: ProjectUpdate, current_user: User = Depends(get_current_user)):
+    query = f"UPDATE public.project SET name = '{new_project.name}' WHERE (project_id = '{new_project.project_id}' AND user_id = {current_user['id']});"
     await database.execute(query=query)
-    await database.execute(query=second_query)
-    return None
+    return new_project
 
 
 # получить ошибки проекта !
@@ -73,14 +103,16 @@ async def get_error(_id_error: int, _project_id: str):
 @app.delete('/api/v1/errors/{_project_id}/{_id_error}')
 async def delete_error(_id_error: int, _project_id: str):
     query = error.delete().where(error.c.id_error == _id_error and _project_id == error.c.project_id)
-    await database.execute(query=query)
-    return None
+    await database.fetch_one(query=query)
+    return Response(content="Успешно удалено", status_code=204)
 
 
 # получение ошибки из сервиса
+# @dramatiq.actor(actor_name='krindj')
 @app.post('/api/send/message')
 async def receiving_errors(arbitrary_json: JSONStructure = None):
     data = arbitrary_json
+    print(f'{data}')
     project_id = None
     if data[b'project_id'] == '':
         print(data[b'project_id'] + 'Введите ключ проекта')
@@ -111,17 +143,17 @@ async def receiving_errors(arbitrary_json: JSONStructure = None):
                                       args=args,
                                       kwargs=kwargs,
                                       traceback=data_error['traceback'])
-        last_error = await database.execute(query)
+        last_error = await database.fetch_one(query=query)
         counter_error = f"UPDATE public.project SET count_error = count_error+1 WHERE project_id = '{project_id}';"
         await database.execute(counter_error)
-        return last_error
+        return last_error  # можно убрать
     except Exception as ex:
         print(f'{ex} project id not found')
         return Response(content=f'"exception": {project_id}', status_code=404)
 
 
 # регистрация пользователя
-@app.post("/sign-up", response_model=User)
+@app.post("/sign-up")
 async def create_user(user: UserCreate):
     db_user = await user_service.get_user_by_email(email=user.email)
     if db_user:
@@ -130,7 +162,7 @@ async def create_user(user: UserCreate):
 
 
 # авторизация
-@app.post("/auth", response_model=TokenBase)
+@app.post("/auth")
 async def auth(form_data: OAuth2PasswordRequestForm = Depends()):
     user = await user_service.get_user_by_email(email=form_data.username)
     if not user:
@@ -140,16 +172,14 @@ async def auth(form_data: OAuth2PasswordRequestForm = Depends()):
             password=form_data.password, hashed_password=user["hashed_password"]
     ):
         raise HTTPException(status_code=400, detail="Incorrect email or password")
-
-    return await user_service.create_user_token(user_id=user['id'])
-
-
-# рут только для активного пользователя
-@app.get("/users/me", response_model=UserBase)
-async def read_users_me(current_user: User = Depends(get_current_user)):
-    return current_user
-
-
-
+    user_token = await user_service.create_user_token(user_id=user['id'])
+    token_base = {
+                "user_id": user['id'],
+                "username": form_data.username,
+                "token_type": "Bearer",
+                "email": user['email'],
+                "user_token": user_token
+    }
+    return token_base
 
 

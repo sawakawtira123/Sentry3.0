@@ -5,8 +5,7 @@ import time
 from typing import List, Dict, Any, AnyStr, Union
 import logging
 from fastapi import FastAPI, Response, HTTPException
-
-from sentry.schemas.error_schemas import ProjectSchema, ErrorSchema, ProjectCreate
+from sentry.schemas.error_schemas import ProjectSchema, ErrorSchema, ProjectCreate, ProjectUpdate
 from sentry.db import database, metadata, engine
 from sentry.models.models import error, project
 from sentry import parse_error
@@ -15,6 +14,10 @@ from sentry.service.project_service import create_project
 from sentry.schemas.user_schemas import User, UserCreate, TokenBase, UserBase
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.middleware.cors import CORSMiddleware
+from dramatiq.brokers.redis import RedisBroker
+# from celery import Celery
+import dramatiq
 
 from sentry.utils.dependecies import get_current_user
 
@@ -167,7 +170,6 @@ async def auth(form_data: OAuth2PasswordRequestForm = Depends()):
     user = await user_service.get_user_by_email(email=form_data.username)
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect email or password")
-
     if not user_service.validate_password(
             password=form_data.password, hashed_password=user["hashed_password"]
     ):

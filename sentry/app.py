@@ -33,7 +33,7 @@ async def shutdown():
 # получить все проекты и создать базу (если надо) !
 @app.get("/api/v1/project/", response_model=List[ProjectSchema])
 async def get_project(current_user: User = Depends(get_current_user)):
-    # metadata.create_all(engine) # создание базы
+    metadata.create_all(engine) # создание базы
     projects = project.select().where(current_user['id'] == project.c.user_id)
     return await database.fetch_all(query=projects)
 

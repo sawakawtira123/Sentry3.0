@@ -27,6 +27,7 @@ class ProjectCreate(BaseModel):
 class ProjectUpdate(BaseModel):
     name: Optional[str] = None
 
+
 class ProjectSchema(BaseModel):
     project_id: Optional[str] = None
     name: Optional[str] = None
@@ -35,3 +36,17 @@ class ProjectSchema(BaseModel):
     user_id: Optional[int]
 
 
+class Order(BaseModel):
+    customer_name: str
+    order_quantity: int
+
+
+# class GetError(BaseModel):
+#     project_id: int
+#     message: str
+#     # script_code: str
+#     # message: str
+#     # exist: int
+#     # name_function: str
+#     # args: str
+#     # kwargs: str

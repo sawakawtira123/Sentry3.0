@@ -70,3 +70,4 @@ tokens_table = db.Table(
     db.Column("expires", db.DateTime()),
     db.Column("user_id", db.ForeignKey("users.id")),
 )
+

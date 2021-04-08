@@ -1,4 +1,50 @@
+import requests
+from flask import Flask
+
+import logging.config
+from settings import project_key, candy_config, candy_wraps, error_func
+
+from mytest import testing as t
 
 
-def jjbet(k):
-    return k/0
+logging.config.dictConfig(candy_config)
+logging.getLogger('')
+project_key('eb255c17-9656-48a5-9360-c1e655945fa2')
+
+new_json = {"name": "Саша",
+            "new": "deva"}
+
+app = Flask(__name__)
+
+
+@app.route('/', methods=['GET'])
+def hello_world():
+    print(t.hello("hey"))
+    return 'hello'
+
+
+@candy_wraps()
+def my_func(s):
+    b = s
+    return [s[b]]
+
+
+@app.route('/error', methods=['GET'])
+def error():
+    my_func(new_json)
+    return 'qqq'
+
+
+@app.route('/error1')
+def error1():
+    # r = requests.post("http://192.168.0.2:8000/api/send/message", json=my_json)
+    return [5, 1/0]
+
+
+@app.route('/error2', methods=['GET'])
+def error2():
+    error_func(5)
+
+
+if __name__ == '__main__':
+    app.run()

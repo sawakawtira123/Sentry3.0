@@ -1,27 +1,22 @@
-import os
-import sys
-import time
-
 from typing import List, Dict, Any, AnyStr, Union
-import logging
-from fastapi import FastAPI, Response, HTTPException
+from fastapi import FastAPI, Response, HTTPException, BackgroundTasks
 from sentry.schemas.error_schemas import ProjectSchema, ErrorSchema, ProjectCreate, ProjectUpdate
 from sentry.db import database, metadata, engine
 from sentry.models.models import error, project
 from sentry import parse_error
 from sentry.service import user_service
 from sentry.service.project_service import create_project
-from sentry.schemas.user_schemas import User, UserCreate, TokenBase, UserBase, UserProfile
+from sentry.schemas.user_schemas import User, UserCreate
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
-from dramatiq.brokers.redis import RedisBroker
-# from celery import Celery
-import dramatiq
-
 from sentry.utils.dependecies import get_current_user
+import json
+import pickle
 
-redis_broker = RedisBroker
+
+from sentry.celery_worker import receiving_errors
+
 app = FastAPI()
 
 app.add_middleware(CORSMiddleware,
@@ -30,20 +25,10 @@ app.add_middleware(CORSMiddleware,
                    allow_methods=['*'],
                    allow_headers=['*'])
 
-# broker = RedisBroker(host="127.0.0.1", port=6379)
-# broker.declare_queue("default")
-# dramatiq.set_broker(broker)
-
-# BROKER_URI = 'redis://localhost:6379/0'
-# celery = Celery(
-#     'celery_app',
-#     broker=BROKER_URI,
-# )
 
 JSONObject = Dict[AnyStr, Any]
 JSONArray = List[Any]
 JSONStructure = Union[JSONArray, JSONObject]
-
 
 @app.on_event('startup')
 async def startup():
@@ -60,6 +45,13 @@ async def shutdown():
 async def get_project(current_user: User = Depends(get_current_user)):
     metadata.create_all(engine) # создание базы
     projects = project.select().where(current_user['id'] == project.c.user_id)
+    return await database.fetch_all(query=projects)
+
+
+# получить один проект !
+@app.get("/api/v1/project/{project_id}", response_model=ProjectSchema)
+async def get_project(project_id: str, current_user: User = Depends(get_current_user)):
+    projects = project.select().where(current_user['id'] == project.c.user_id and project_id == project.c.project_id)
     return await database.fetch_all(query=projects)
 
 
@@ -110,51 +102,6 @@ async def delete_error(_id_error: int, _project_id: str):
     return Response(content="Успешно удалено", status_code=204)
 
 
-# получение ошибки из сервиса
-# @dramatiq.actor(actor_name='krindj')
-@app.post('/api/send/message')
-async def receiving_errors(arbitrary_json: JSONStructure = None):
-    data = arbitrary_json
-    print(f'{data}')
-    project_id = None
-    if data[b'project_id'] == '':
-        print(data[b'project_id'] + 'Введите ключ проекта')
-    else:
-        project_id = data[b'project_id']
-    args = '{}'
-    kwargs = '{}'
-    name_function = ''
-    message = data[b'message']
-    if data[b'exist'] == 1:
-        pass
-    else:
-        name_function = data[b'name_function']  # Можно тут заменить """"""""
-        args = data[b'args']
-        kwargs = data[b'kwargs']
-    data_error = parse_error.parsing(message)
-    data_program_code = parse_error.parse_code(data[b'script_code'], data_error['line_error'])
-    print(f'ID ПРОЕКТА: {project_id}')
-    try:
-        query = error.insert().values(project_id=project_id,
-                                      date_time=data_error['date_error'],
-                                      type_error=data_error['type_error'],
-                                      name_py=data_error['name_of_py'],
-                                      code_of_line=data_error['line_error'],
-                                      program_code=data_program_code,
-                                      description=data_error['description'],
-                                      name_function=name_function,
-                                      args=args,
-                                      kwargs=kwargs,
-                                      traceback=data_error['traceback'])
-        last_error = await database.fetch_one(query=query)
-        counter_error = f"UPDATE public.project SET count_error = count_error+1 WHERE project_id = '{project_id}';"
-        await database.execute(counter_error)
-        return last_error  # можно убрать
-    except Exception as ex:
-        print(f'{ex} project id not found')
-        return Response(content=f'"exception": {project_id}', status_code=404)
-
-
 # регистрация пользователя
 @app.post("/sign-up")
 async def create_user(user: UserCreate):
@@ -185,11 +132,23 @@ async def auth(form_data: OAuth2PasswordRequestForm = Depends()):
     return token_base
 
 
+# получить информацию о пользователе
 @app.get("/api/v1/user/")
 async def get_user_info(current_user: User = Depends(get_current_user)):
     user_id = current_user['user_id']
     query = f'SELECT us.id, us.email, name, tk.token, us."createdAt", us."updatedAt", us.image FROM public.users us join tokens tk on tk.user_id=us.id where us.id = {user_id} ORDER BY tk.id DESC LIMIT 1'
     return await database.fetch_one(query=query)
+
+# получение ошибок из сервисов
+@app.post('/api/send/message')
+async def get_error_task(my_json: Dict):
+    receiving_errors.delay(my_json)
+    return {"message": "Поступила ошибка!"}
+
+
+
+
+
 
 
 

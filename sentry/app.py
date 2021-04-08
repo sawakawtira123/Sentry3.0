@@ -15,7 +15,7 @@ import json
 import pickle
 
 
-from sentry.celery_worker import receiving_errors
+# from sentry.celery_worker import receiving_errors
 
 app = FastAPI()
 
@@ -140,10 +140,10 @@ async def get_user_info(current_user: User = Depends(get_current_user)):
     return await database.fetch_one(query=query)
 
 # получение ошибок из сервисов
-@app.post('/api/send/message')
-async def get_error_task(my_json: Dict):
-    receiving_errors.delay(my_json)
-    return {"message": "Поступила ошибка!"}
+# @app.post('/api/send/message')
+# async def get_error_task(my_json: Dict):
+#     receiving_errors.delay(my_json)
+#     return {"message": "Поступила ошибка!"}
 
 
 

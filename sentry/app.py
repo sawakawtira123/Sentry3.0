@@ -136,8 +136,15 @@ async def auth(form_data: OAuth2PasswordRequestForm = Depends()):
 @app.get("/api/v1/user/")
 async def get_user_info(current_user: User = Depends(get_current_user)):
     user_id = current_user['user_id']
-    query = f'SELECT us.id, us.email, name, tk.token, us."createdAt", us."updatedAt", us.image FROM public.users us join tokens tk on tk.user_id=us.id where us.id = {user_id} ORDER BY tk.id DESC LIMIT 1'
-    return await database.fetch_one(query=query)
+    query = f'SELECT us.id, us.email, name, tk.token, tk.expires, us."createdAt", us."updatedAt", us.image FROM public.users us join tokens tk on tk.user_id=us.id where us.id = {user_id} ORDER BY tk.id DESC LIMIT 1'
+    token = await database.fetch_one(query=query)
+    token_dict = {"token": token["token"], "expires": token["expires"]}
+    return {"id": token['id'],
+            "email": token['email'],
+            "user_token": token_dict,
+            "createdAt": token['createdAt'],
+            "updatedAt": token['updatedAt'],
+            "image": token["image"]}
 
 # # получение ошибок из сервисов
 # @app.post('/api/send/message')

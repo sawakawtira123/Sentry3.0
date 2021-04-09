@@ -37,7 +37,7 @@ class TokenBase(BaseModel):
 
 class User(UserBase):
     """ Формирует тело ответа с деталями пользователя и токеном """
-    token: TokenBase = {}
+    token: TokenBase = dict()
 
 
 class UserProfile(UserAuth):

@@ -139,7 +139,7 @@ async def get_user_info(current_user: User = Depends(get_current_user)):
     query = f'SELECT us.id, us.email, name, tk.token, us."createdAt", us."updatedAt", us.image FROM public.users us join tokens tk on tk.user_id=us.id where us.id = {user_id} ORDER BY tk.id DESC LIMIT 1'
     return await database.fetch_one(query=query)
 
-# получение ошибок из сервисов
+# # получение ошибок из сервисов
 # @app.post('/api/send/message')
 # async def get_error_task(my_json: Dict):
 #     receiving_errors.delay(my_json)

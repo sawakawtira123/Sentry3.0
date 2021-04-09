@@ -64,9 +64,9 @@ async def create_user(user: user_schema.UserCreate):
     )
     user_id = await database.execute(query)
     token = await create_user_token(user_id)
-    token_dict = {"user_token": token["token"], "expires": token["expires"]}
+    token_dict = {"token": token["token"], "expires": token["expires"]}
 
-    return {**user.dict(), "id": user_id, "is_active": True, "token": token_dict}
+    return {**user.dict(), "id": user_id, "is_active": True, "user_token": token_dict}
 # async def create_user(user: user_schema.UserCreate):
 #     """ Создает нового пользователя в БД """
 #     salt = get_random_string()

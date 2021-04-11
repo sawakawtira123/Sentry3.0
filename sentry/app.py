@@ -3,7 +3,6 @@ from fastapi import FastAPI, Response, HTTPException, BackgroundTasks
 from sentry.schemas.error_schemas import ProjectSchema, ErrorSchema, ProjectCreate, ProjectUpdate
 from sentry.db import database, metadata, engine
 from sentry.models.models import error, project
-from sentry import parse_error
 from sentry.service import user_service
 from sentry.service.project_service import create_project
 from sentry.schemas.user_schemas import User, UserCreate
@@ -11,8 +10,6 @@ from fastapi import Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from sentry.utils.dependecies import get_current_user
-import json
-import pickle
 
 from sentry.celery_worker import receiving_errors
 

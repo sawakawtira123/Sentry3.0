@@ -3,7 +3,6 @@ from sqlalchemy import ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import UUID
 import datetime
-
 from sentry.db import metadata
 
 Base = declarative_base()
@@ -19,7 +18,7 @@ error = db.Table(
     db.Column('type_error', db.String),
     db.Column('description', db.String),
     db.Column('code_of_line', db.Integer),
-    db.Column('program_code', db.String),
+    db.Column('program_code', JSONB),
 
     db.Column('name_function', db.String),
     db.Column('args', db.String),
@@ -52,7 +51,7 @@ users_table = db.Table(
     ),
     db.Column("createdAt", db.DateTime, default=datetime.datetime.now()),
     db.Column("updatedAt", db.DateTime, default=datetime.datetime.now()),
-    db.Column("image", db.BLOB),
+    db.Column("image", db.String),
 )
 
 tokens_table = db.Table(

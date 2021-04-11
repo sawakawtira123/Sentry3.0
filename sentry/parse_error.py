@@ -31,6 +31,7 @@ def parsing(error_string):
 
 def parse_code(code, number_code):
     count_code = []
+
     with open('log.log', 'w') as f:
         f.write(code)
     with open('log.log', 'r') as f:

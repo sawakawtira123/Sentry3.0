@@ -14,8 +14,7 @@ from sentry.utils.dependecies import get_current_user
 import json
 import pickle
 
-
-# from sentry.celery_worker import receiving_errors
+from sentry.celery_worker import receiving_errors
 
 app = FastAPI()
 
@@ -25,10 +24,10 @@ app.add_middleware(CORSMiddleware,
                    allow_methods=['*'],
                    allow_headers=['*'])
 
-
 JSONObject = Dict[AnyStr, Any]
 JSONArray = List[Any]
 JSONStructure = Union[JSONArray, JSONObject]
+
 
 @app.on_event('startup')
 async def startup():
@@ -43,7 +42,7 @@ async def shutdown():
 # получить все проекты и создать базу (если надо) !
 @app.get("/api/v1/project/", response_model=List[ProjectSchema])
 async def get_project(current_user: User = Depends(get_current_user)):
-    metadata.create_all(engine) # создание базы
+    metadata.create_all(engine)  # создание базы
     projects = project.select().where(current_user['id'] == project.c.user_id)
     return await database.fetch_all(query=projects)
 
@@ -123,11 +122,11 @@ async def auth(form_data: OAuth2PasswordRequestForm = Depends()):
         raise HTTPException(status_code=400, detail="Incorrect email or password")
     user_token = await user_service.create_user_token(user_id=user['id'])
     token_base = {
-                "user_id": user['id'],
-                "username": form_data.username,
-                "token_type": "Bearer",
-                "email": user['email'],
-                "user_token": user_token
+        "user_id": user['id'],
+        "username": form_data.username,
+        "token_type": "Bearer",
+        "email": user['email'],
+        "user_token": user_token
     }
     return token_base
 
@@ -146,16 +145,9 @@ async def get_user_info(current_user: User = Depends(get_current_user)):
             "updatedAt": token['updatedAt'],
             "image": token["image"]}
 
-# # получение ошибок из сервисов
-# @app.post('/api/send/message')
-# async def get_error_task(my_json: Dict):
-#     receiving_errors.delay(my_json)
-#     return {"message": "Поступила ошибка!"}
 
-
-
-
-
-
-
-
+# получение ошибок из сервисов
+@app.post('/api/send/message')
+async def get_error_task(my_json: Dict):
+    receiving_errors.delay(my_json)
+    return {"message": "Поступила ошибка!"}

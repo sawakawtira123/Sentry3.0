@@ -37,6 +37,13 @@ def parse_code(code, number_code):
     with open('log.log', 'r') as f:
         contents = f.readlines()
     for count, value in enumerate(contents, start=1):
-        if (number_code - 3) <= count <= (number_code + 3):
-            count_code.append(f'{count}.   {value}')
-    return "".join(count_code)
+        dict_js = {
+            "count_str": 0,
+            "value": ""
+        }
+        if (number_code - 5) <= count <= (number_code + 5):
+            dict_js["count_str"] = count
+            new_value = value.replace("\n", "")
+            dict_js["value"] = new_value
+            count_code.append(dict_js)
+    return count_code

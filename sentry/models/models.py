@@ -1,7 +1,7 @@
 import sqlalchemy as db
 from sqlalchemy import ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 import datetime
 from sentry.db import metadata
 

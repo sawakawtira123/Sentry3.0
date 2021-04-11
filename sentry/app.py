@@ -60,7 +60,7 @@ async def add_project(new_project: ProjectCreate, current_user: User = Depends(g
     return await create_project(new_project, current_user)
 
 
-# удаление проекта и его ошибок TODO сделать одним запросом !
+# удаление проекта и его ошибок !
 @app.delete('/api/v1/project/{_project_id}')
 async def delete_project(_project_id: str, current_user: User = Depends(get_current_user)):
     query = error.delete().where(error.c.project_id == _project_id)

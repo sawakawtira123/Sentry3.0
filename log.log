@@ -1,10 +1,8 @@
 from __future__ import print_function
 
 import functools
-import inspect
 import json
 import logging
-
 import requests
 
 
@@ -25,14 +23,20 @@ class MyHandler(logging.Handler):
         file_code = split_line[0]
         path_replace = file_code.replace('\"', "")
         path_file = path_replace.replace(':', ':\\').strip()
-        handle = open(path_file, "r")
+
+        handle = open(path_file, encoding="utf8")
         script_code = handle.read()
         handle.close()
+
+        # with open("C:\\Users\Far\PycharmProjects\sentry_2\settings.py", "r") as text:
+        #     handle = text.read()
+        #     print(handle)
+
         if not all_args:
             my_json = {
-                "project_id": "" + project_id + "",
-                "message": "" + message + "",
-                "script_code": "" + script_code + "",
+                "project_id": project_id,
+                "message": message,
+                "script_code": script_code,
                 "exist": 1
             }
         else:
@@ -40,20 +44,31 @@ class MyHandler(logging.Handler):
             name_function = all_args[0]
             args = all_args[1]
             kwargs = all_args[2]
-            # print(type(args))
-            # print(type(kwargs))
-            # print(args)
-            # print(kwargs)
-            my_json = {"project_id": "" + project_id + "",
-                       "script_code": "" + script_code + "",
-                       "message": "" + message + "",
+            my_json = {"project_id": project_id,
+                       "script_code": script_code,
+                       "message": message,
                        "exist": 0,
-                       "name_function": "" + json.dumps(name_function) + "",
-                       "args": "" + json.dumps(args, ensure_ascii=False) + "",
-                       "kwargs": "" + json.dumps(kwargs) + ""
+                       "name_function": json.dumps(name_function),
+                       "args": json.dumps(args, ensure_ascii=False),
+                       "kwargs": json.dumps(kwargs)
                        }
         # r = requests.post("https://lumerty.ru/api/send/message", json=my_json)
-        r = requests.post("http://fdf5d9293937.ngrok.io/api/send/message", json=my_json)
+
+        r = requests.post("http://f0af852a5818.ngrok.io/api/send/message", json=my_json)
+
+
+# class InfoHandler(logging.Handler):
+#     def __init__(self):
+#         logging.Handler.__init__(self)
+#         self.args = None
+#
+#     def emit(self, record):
+#         message = self.format(record)
+#         if record.levelname == 'INFO':
+#             print(message)
+#         else:
+#             pass
+#         # print(message)
 
 
 candy_config = {
@@ -73,6 +88,14 @@ candy_config = {
             '()': MyHandler,
             'level': 'ERROR',
             'formatter': 'my_format'},
+
+        # 'info_handler':
+        #     {
+        #     '()': InfoHandler,
+        #     'level': 'INFO',
+        #     'formatter': 'my_format'
+        #     }
+
         # 'file_handler': {
         #     '()': MyHandler,
         #     'level': 'ERROR',
@@ -84,7 +107,7 @@ candy_config = {
         '': {
             # '()': Log,
             'level': 'DEBUG',
-            'handlers': ['console']
+            'handlers': ['console'] #, 'info_handler']
             # 'propogate': False
         }
     }

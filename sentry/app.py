@@ -1,6 +1,8 @@
 from typing import List, Dict, Any, AnyStr, Union
 from fastapi import FastAPI, Response, HTTPException, BackgroundTasks
-from sentry.schemas.error_schemas import ProjectSchema, ErrorSchema, ProjectCreate, ProjectUpdate
+from sqlalchemy import and_
+
+from sentry.schemas.error_schemas import ProjectSchema, ErrorSchema, ProjectCreate, ProjectUpdate, DeleteErrors
 from sentry.db import database, metadata, engine
 from sentry.models.models import error, project
 from sentry.service import user_service
@@ -77,7 +79,7 @@ async def update_project(project_id: str, new_project: ProjectUpdate, current_us
 
 
 # получить ошибки проекта !
-@app.get("/api/v1/errors/{_project_id}", response_model=List[ErrorSchema])
+@app.get("/api/v1/errors/{_project_id}")
 async def get_error(_project_id: str):
     errors = error.select().where(_project_id == error.c.project_id)
     return await database.fetch_all(query=errors)
@@ -89,13 +91,13 @@ async def get_error(_id_error: int, _project_id: str):
     get_errors = error.select().where(error.c.id_error == _id_error and _project_id == error.c.project_id)
     return await database.fetch_all(query=get_errors)
 
-
 # удаление одной ошибки !
-@app.delete('/api/v1/errors/{_project_id}/{_id_error}')
-async def delete_error(_id_error: int, _project_id: str):
-    query = error.delete().where(error.c.id_error == _id_error and _project_id == error.c.project_id)
-    await database.fetch_one(query=query)
-    return Response(content="Успешно удалено", status_code=204)
+@app.delete('/api/v1/errors/{project_id}')
+async def delete_error(project_id: str, error_ids: DeleteErrors):
+    for i in error_ids.error_ids:
+        query = error.delete().where(and_(project.c.project_id == project_id, error.c.id_error == i))
+        await database.fetch_all(query=query)
+    return error_ids.error_ids
 
 
 # регистрация пользователя
@@ -146,5 +148,6 @@ async def get_user_info(current_user: User = Depends(get_current_user)):
 # получение ошибок из сервисов
 @app.post('/api/send/message')
 async def get_error_task(my_json: Dict):
+    print(my_json)
     receiving_errors.delay(my_json)
     return {"message": "Поступила ошибка!"}

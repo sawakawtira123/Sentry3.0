@@ -36,17 +36,7 @@ class ProjectSchema(BaseModel):
     user_id: Optional[int]
 
 
-class Order(BaseModel):
-    customer_name: str
-    order_quantity: int
+class DeleteErrors(BaseModel):
+    error_ids: List
 
 
-# class GetError(BaseModel):
-#     project_id: int
-#     message: str
-#     # script_code: str
-#     # message: str
-#     # exist: int
-#     # name_function: str
-#     # args: str
-#     # kwargs: str
